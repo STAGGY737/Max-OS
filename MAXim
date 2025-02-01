@@ -1,0 +1,33 @@
+#include <stddef.h>
+#include <stdint.h>
+
+// Define el puerto de video
+#define VIDEO_ADDRESS 0xB8000
+#define WHITE_ON_BLACK 0x07
+
+void kernel_main() {
+    const char *str = "Hello, World!";
+    uint16_t *vidptr = (uint16_t*) VIDEO_ADDRESS;
+    size_t i = 0;
+    size_t j = 0;
+
+    // Limpiar la pantalla
+    while (j < 80 * 25) {
+        vidptr[j] = (uint16_t) ' ' | (WHITE_ON_BLACK << 8);
+        j++;
+    }
+
+    j = 0;
+
+    // Escribir el mensaje en la pantalla
+    while (str[j] != '\0') {
+        vidptr[i] = (uint16_t) str[j] | (WHITE_ON_BLACK << 8);
+        i++;
+        j++;
+    }
+
+    // Detener la CPU
+    while (1) {
+        __asm__ __volatile__("hlt");
+    }
+}
