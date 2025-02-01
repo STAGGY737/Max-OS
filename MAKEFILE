@@ -1,0 +1,18 @@
+.SILENT:
+
+all: os-image.bin
+
+os-image.bin: boot/boot.o kernel.o
+    cat $^ > $@
+
+boot/boot.o: boot/boot.asm
+    nasm -f bin $< -o $@
+
+kernel.o: src/kernel.c
+    gcc -ffreestanding -c $< -o $@ -m64 -nostdlib -nostartfiles -nodefaultlibs
+
+clean:
+    rm -f *.bin *.o
+
+run: os-image.bin
+    qemu-system-x86_64 -drive format=raw,file=$<
