@@ -1,0 +1,54 @@
+BITS 16
+ORG 0x7C00
+
+start:
+    cli                     ; Deshabilitar interrupciones
+    mov ax, 0x9000          ; Segmento de pila
+    mov ss, ax
+    mov sp, 0xFFFF
+    mov ax, 0               ; Segmento de datos
+    mov ds, ax
+    mov es, ax
+
+    lgdt [gdt_desc]         ; Cargar la tabla GDT
+    mov eax, cr0
+    or eax, 1               ; Activar el modo protegido
+    mov cr0, eax
+    jmp CODE_SEG:init_pm
+
+[BITS 32]
+init_pm:
+    mov ax, DATA_SEG
+    mov ds, ax
+    mov es, ax
+    mov fs, ax
+    mov gs, ax
+    mov ss, ax
+    mov esp, 0x90000        ; Nueva pila para modo protegido
+
+    ; Activar el modo de 64 bits
+    mov ecx, CR4
+    or ecx, 0x20
+    mov CR4, ecx
+    mov ecx, EFER
+    or ecx, 0x100
+    mov EFER, ecx
+
+    jmp CODE64_SEG:init_long_mode
+
+[BITS 64]
+init_long_mode:
+    ; Código de 64 bits aquí
+    hlt                     ; Detener la CPU
+
+gdt:
+    dq 0x0                 ; Null descriptor
+    dq 0x00AF9A000000FFFF  ; Código de 32 bits
+    dq 0x00AF92000000FFFF  ; Datos de 32 bits
+    dq 0x00AF9A000000FFFF  ; Código de 64 bits
+    dq 0x00AF92000000FFFF  ; Datos de 64 bits
+
+gdt_desc:
+    dw gdt_end - gdt - 1    ; Límite
+    dd gdt                  ; Dirección base
+gdt_end:
